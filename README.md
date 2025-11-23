@@ -9,11 +9,15 @@ InCreator_Assignment/
 ├── DESIGN.md               # Comprehensive Architecture & Design Document
 ├── architecture.mermaid    # Visual Architecture Diagram
 └── artifacts/
-    ├── schemas.sql         # PostgreSQL Schemas (Partitioned)
+    ├── mongo_schema.py     # MongoDB Schema Definitions & Validation
+    ├── pinecone_client.py  # Pinecone Vector DB Client Wrapper
     ├── api_spec.yaml       # OpenAPI 3.0 Specification
     ├── ranking_prototype.py# Python Prototype (Vector Search + LLM Rerank)
-    ├── schema_validation.py# Automated Schema Validator
-    └── smoke_test.py       # End-to-End Smoke Test Script
+    ├── schema_validation_mongo.py # Automated MongoDB Schema Validator
+    ├── smoke_test.py       # End-to-End Smoke Test Script
+    ├── embedding_worker.py # Mock Embedding Generation Worker
+    ├── identity_resolution_test.py # Identity Graph Resolution Tests
+    └── identity_graph_example.json # Sample Identity Graph Data
 ```
 
 ## 🚀 How to Run Verification
