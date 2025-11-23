@@ -1,0 +1,31 @@
+{
+  "identity_graph_example": {
+    "description": "Represents a probabilistic link between a YouTube channel and a Twitter profile.",
+    "edge": {
+      "edge_id": "e_99887766-5544-3322-1100",
+      "source_node": {
+        "creator_id": "c_youtube_123",
+        "platform": "youtube",
+        "handle": "@TechReviewerPro",
+        "display_name": "Tech Reviewer Pro"
+      },
+      "target_node": {
+        "creator_id": "c_twitter_456",
+        "platform": "twitter",
+        "handle": "@tech_reviewer_real",
+        "display_name": "Tech Reviewer (Official)"
+      },
+      "relation_type": "same_person",
+      "confidence_score": 0.94,
+      "match_signals": {
+        "handle_similarity": 0.82,
+        "bio_overlap_tokens": ["tech", "reviews", "gadgets", "official"],
+        "avatar_phash_distance": 2,
+        "cross_link_found": true,
+        "cross_link_url": "https://twitter.com/tech_reviewer_real"
+      },
+      "created_at": "2025-11-23T10:00:00Z",
+      "status": "active"
+    }
+  }
+}

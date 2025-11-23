@@ -1,0 +1,33 @@
+# .github/workflows/ci.yml
+name: Design Verification CI
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install Dependencies
+        run: pip install numpy pinecone-client pymongo
+
+      - name: Validate Schemas (Mock)
+        run: python artifacts/schema_validation_mongo.py
+        
+      - name: Run Smoke Test
+        run: python artifacts/smoke_test.py
+        
+      - name: Verify Embedding Pipeline
+        run: python artifacts/embedding_worker.py
+        
+      - name: Verify Prototype Logic
+        run: python artifacts/ranking_prototype.py
+        
+      - name: Verify Identity Resolution
+        run: python artifacts/identity_resolution_test.py

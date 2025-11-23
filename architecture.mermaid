@@ -1,0 +1,129 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#e0e0e0', 'textColor': '#ffffff', 'mainBkg': '#1f1f1f', 'edgeLabelBackground':'#1f1f1f', 'tertiaryColor': '#2d2d2d'}}}%%
+graph LR
+    %% Global Link Styles
+    linkStyle default stroke:#e0e0e0,stroke-width:2px;
+
+    %% Node Styles - High contrast against dark background
+    classDef platform fill:#8e44ad,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef ingestion fill:#2980b9,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef processing fill:#27ae60,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef storage fill:#c0392b,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef serving fill:#f39c12,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef ops fill:#7f8c8d,stroke:#fff,stroke-width:2px,color:#fff;
+
+    subgraph External["External Platforms"]
+        direction TB
+        IG[Instagram]:::platform
+        YT[YouTube]:::platform
+        TT[TikTok]:::platform
+        X[X / Twitter]:::platform
+    end
+
+    subgraph Ingestion["Ingestion Layer (ECS/K8s)"]
+        direction TB
+        subgraph Queues["Throttling & Queues"]
+            direction TB
+            IG_Q[IG Queue]:::ingestion
+            YT_Q[YT Queue]:::ingestion
+            TT_Q[TT Queue]:::ingestion
+            X_Q[X Queue]:::ingestion
+            
+            RL["Token Bucket Redis<br/>(Per-Platform / Proxy)"]:::ingestion
+            Penalty[Penalty Box / Cool Down]:::ingestion
+        end
+        
+        Scrapers[Scrapers / API Clients]:::ingestion
+        DLQ[Dead Letter Queue]:::ingestion
+    end
+
+    subgraph Processing["Data Processing (Kinesis/Lambda/Spark)"]
+        direction TB
+        RawStream[Raw Data Stream]:::processing
+        Enrich[Enrichment & Normalization]:::processing
+        Identity[Identity Resolution]:::processing
+        Embed["Embedding Generation<br/>(Batch/Async)"]:::processing
+    end
+
+    subgraph Storage["Storage Layer"]
+        direction TB
+        S3_Raw[S3 Raw Storage]:::storage
+        Mongo[(MongoDB Atlas)]:::storage
+        Pinecone[(Pinecone Vector DB)]:::storage
+        Cache["Cache<br/>L1: In-Process<br/>L2: Redis"]:::storage
+        
+        %% Legend / Note
+        StorageInfo["ℹ️ Pinecone: Vectors + Meta<br/>Mongo: Full Profiles"]:::storage
+    end
+
+    subgraph Serving["Serving Layer (API Gateway / ECS)"]
+        direction TB
+        API[Discovery API]:::serving
+        Search["Search Service<br/>(Retrieval + Filtering)"]:::serving
+        Rank["Reranking Service<br/>(LLM / Top-N Gating: 50)"]:::serving
+    end
+    
+    subgraph Ops["Ops & Monitoring"]
+        direction TB
+        Prometheus[Prometheus Metrics]:::ops
+        Airflow[Airflow Orchestration]:::ops
+        Secrets[Secrets Manager / KMS]:::ops
+    end
+
+    %% Subgraph Styles - Darker backgrounds for contrast
+    style External fill:#2c3e50,stroke:#fff,stroke-width:1px,stroke-dasharray: 5 5,color:#fff
+    style Ingestion fill:#34495e,stroke:#fff,stroke-width:1px,color:#fff
+    style Queues fill:#2c3e50,stroke:#bdc3c7,stroke-width:1px,stroke-dasharray: 5 5,color:#fff
+    style Processing fill:#16a085,stroke:#fff,stroke-width:1px,fill-opacity:0.3,color:#fff
+    style Storage fill:#8e44ad,stroke:#fff,stroke-width:1px,fill-opacity:0.3,color:#fff
+    style Serving fill:#d35400,stroke:#fff,stroke-width:1px,fill-opacity:0.3,color:#fff
+    style Ops fill:#7f8c8d,stroke:#fff,stroke-width:1px,fill-opacity:0.3,color:#fff
+
+    %% Data Flow
+    IG --> IG_Q
+    YT --> YT_Q
+    TT --> TT_Q
+    X --> X_Q
+
+    %% Rate Limit Flow Detail
+    IG_Q & YT_Q & TT_Q & X_Q --> RL
+    RL -- Tokens Available --> Scrapers
+    
+    %% Split edges for better rendering compatibility
+    RL -- No Tokens --> IG_Q
+    RL -- No Tokens --> YT_Q
+    RL -- No Tokens --> TT_Q
+    RL -- No Tokens --> X_Q
+    
+    Scrapers -- Success (200) --> RawStream
+    Scrapers -- Rate Limit (429) --> RL
+    Scrapers -- Error (5xx) --> DLQ
+    DLQ -. Backoff Retry .-> RL
+
+    %% Processing Pipeline (Raw -> Enriched -> Index)
+    RawStream -- JSON --> S3_Raw
+    RawStream -- Stream --> Enrich
+    S3_Raw -. Replay/Backfill .-> Enrich
+    Enrich -- Normalized --> Identity
+    Identity -- identity_edges --> Mongo
+    Identity -- Profile Text --> Embed
+    Embed -- Vectors + Meta --> Pinecone
+
+    %% Serving Flow (Hybrid Retrieval)
+    User((User)) --> API
+    API --> Search
+    Search --> Cache
+    Cache -. Miss .-> Pinecone
+    Pinecone -- Top-K IDs --> Search
+    Search -- Bulk Fetch Profiles --> Mongo
+    Mongo -- Full Docs --> Search
+    Search -- Candidates --> Rank
+    Rank --> API
+
+    %% Ops Flow
+    Airflow --> Scrapers
+    Airflow --> Enrich
+    Prometheus -. Metrics .-> API
+    Prometheus -. Metrics .-> Scrapers
+    Secrets -. Keys .-> Scrapers
+    Secrets -. Keys .-> Embed
+    Secrets -. Keys .-> API

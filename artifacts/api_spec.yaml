@@ -1,0 +1,109 @@
+openapi: 3.0.0
+info:
+  title: InCreator Discovery API
+  description: API for searching and retrieving influencer data across platforms.
+  version: 1.0.0
+servers:
+  - url: https://api.increator.ai/v1
+    description: Production Server
+
+paths:
+  /search:
+    post:
+      summary: Search for creators
+      description: Semantic search using embeddings and metadata filters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: "Tech reviewers who talk about AI and coding"
+                filters:
+                  type: object
+                  properties:
+                    platforms:
+                      type: array
+                      items:
+                        type: string
+                        enum: [instagram, youtube, tiktok, twitter]
+                    min_followers:
+                      type: integer
+                    country:
+                      type: string
+                limit:
+                  type: integer
+                  default: 20
+      responses:
+        '200':
+          description: Successful search results
+          content:
+            application/json:
+              example:
+                meta:
+                  total_hits: 1450
+                  latency_ms: 125
+                  query_id: "q_88239123"
+                data:
+                  - creator_id: "c_12345678"
+                    handle: "@tech_guru"
+                    platform: "youtube"
+                    display_name: "Tech Guru Reviews"
+                    bio: "Unboxing the future. AI, Gadgets, and Code."
+                    metrics:
+                      followers: 1500000
+                      engagement_rate: 0.045
+                    relevance_score: 0.92
+                    why_ranked:
+                      - "Matches 'AI' and 'Gadgets' in bio"
+                      - "High engagement rate (>4%)"
+                    cache_hit: false
+                    identity_group_id: "g_998877"
+                    top_content:
+                      - url: "https://youtube.com/watch?v=xyz"
+                        title: "The Future of AI Agents"
+                        views: 500000
+                  - creator_id: "c_87654321"
+                    handle: "@ai_coder"
+                    platform: "twitter"
+                    display_name: "Alice Coder"
+                    bio: "Building agents at DeepMind. Views my own."
+                    metrics:
+                      followers: 50000
+                      engagement_rate: 0.12
+                    relevance_score: 0.88
+                    identity_group_id: "g_112233"
+
+  /creators/{creator_id}:
+    get:
+      summary: Get creator details
+      parameters:
+        - name: creator_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Creator profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatorProfile'
+
+components:
+  schemas:
+    CreatorProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        handle:
+          type: string
+        platform:
+          type: string
+        metrics:
+          type: object
