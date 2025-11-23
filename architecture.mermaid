@@ -28,7 +28,7 @@ graph LR
             TT_Q[TT Queue]:::ingestion
             X_Q[X Queue]:::ingestion
             
-            RL["Token Bucket Redis<br/>(Per-Platform / Proxy)"]:::ingestion
+            RL["Token Bucket Redis<br/>(Per-Platform / Proxy)<br/>(Rotating Pools)"]:::ingestion
             Penalty[Penalty Box / Cool Down]:::ingestion
         end
         
@@ -36,12 +36,15 @@ graph LR
         DLQ[Dead Letter Queue]:::ingestion
     end
 
-    subgraph Processing["Data Processing (Kinesis/Lambda/Spark)"]
+    subgraph Processing["Data Processing "]
         direction TB
         RawStream[Raw Data Stream]:::processing
         Enrich[Enrichment & Normalization]:::processing
         Identity[Identity Resolution]:::processing
         Embed["Embedding Generation<br/>(Batch/Async)"]:::processing
+
+        %% Legend / Note
+        ProcessingInfo["ℹ️ Embedding: Vectors + Meta<br/>Mongo: Full Profiles<br/>S3: Raw Archive"]:::processing
     end
 
     subgraph Storage["Storage Layer"]
@@ -52,14 +55,14 @@ graph LR
         Cache["Cache<br/>L1: In-Process<br/>L2: Redis"]:::storage
         
         %% Legend / Note
-        StorageInfo["ℹ️ Pinecone: Vectors + Meta<br/>Mongo: Full Profiles"]:::storage
+        StorageInfo["ℹ️ Pinecone: Vectors + Meta<br/>Mongo: Full Profiles<br/>S3: Raw Archive"]:::storage
     end
 
     subgraph Serving["Serving Layer (API Gateway / ECS)"]
         direction TB
         API[Discovery API]:::serving
-        Search["Search Service<br/>(Retrieval + Filtering)"]:::serving
-        Rank["Reranking Service<br/>(LLM / Top-N Gating: 50)"]:::serving
+        Search["Search Service<br/>(Retrieval + Filtering)<br/>(Fetch IDs -> Fetch Profiles)"]:::serving
+        Rank["Reranking Service<br/>(LLM / Top-N Gating: 50)<br/>(Batch / Cost Cap)"]:::serving
     end
     
     subgraph Ops["Ops & Monitoring"]
@@ -102,6 +105,7 @@ graph LR
     %% Processing Pipeline (Raw -> Enriched -> Index)
     RawStream -- JSON --> S3_Raw
     RawStream -- Stream --> Enrich
+    S3_Raw -. Trigger Backfill .-> Airflow
     S3_Raw -. Replay/Backfill .-> Enrich
     Enrich -- Normalized --> Identity
     Identity -- identity_edges --> Mongo
