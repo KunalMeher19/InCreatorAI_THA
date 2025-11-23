@@ -15,7 +15,7 @@ jobs:
           python-version: '3.9'
           
       - name: Install Dependencies
-        run: pip install numpy pinecone-client pymongo
+        run: pip install numpy pinecone pymongo
 
       - name: Validate Schemas (Mock)
         run: python artifacts/schema_validation_mongo.py

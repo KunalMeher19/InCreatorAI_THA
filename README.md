@@ -23,7 +23,7 @@ We have included automated scripts to validate the design artifacts.
 ### Prerequisites
 - Python 3.8+
 - `numpy`
-- `pinecone-client>=3.0.0` (Tested with v3.1.0)
+- `pinecone>=3.0.0` (Tested with v3.1.0)
 - `pymongo`
 
 ### Run Modes
@@ -92,7 +92,7 @@ jobs:
           python-version: '3.9'
           
       - name: Install Dependencies
-        run: pip install numpy pinecone-client pymongo
+        run: pip install numpy pinecone pymongo
 
       - name: Validate Schemas (Mock)
         run: python artifacts/schema_validation_mongo.py
