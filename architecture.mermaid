@@ -4,21 +4,12 @@ graph LR
     linkStyle default stroke:#e0e0e0,stroke-width:2px;
 
     %% Node Styles - High contrast against dark background
-%%{init: {'theme': 'dark', 'themeVariables': { 'lineColor': '#e0e0e0', 'textColor': '#ffffff', 'mainBkg': '#1f1f1f', 'edgeLabelBackground':'#1f1f1f', 'tertiaryColor': '#2d2d2d'}}}%%
-graph LR
-    %% Global Link Styles
-    linkStyle default stroke:#e0e0e0,stroke-width:2px;
-
-    %% Node Styles - High contrast against dark background
     classDef platform fill:#8e44ad,stroke:#fff,stroke-width:2px,color:#fff;
     classDef ingestion fill:#2980b9,stroke:#fff,stroke-width:2px,color:#fff;
     classDef processing fill:#27ae60,stroke:#fff,stroke-width:2px,color:#fff;
     classDef storage fill:#c0392b,stroke:#fff,stroke-width:2px,color:#fff;
     classDef serving fill:#f39c12,stroke:#fff,stroke-width:2px,color:#fff;
     classDef ops fill:#7f8c8d,stroke:#fff,stroke-width:2px,color:#fff;
-    
-    %% Spacer Style - Invisible node to push content down
-    classDef spacer fill:none,stroke:none,color:#00000000,width:0px,height:0px;
 
     subgraph External["External Platforms"]
         direction TB
@@ -30,72 +21,52 @@ graph LR
 
     subgraph Ingestion["Ingestion Layer (ECS/K8s)"]
         direction TB
-        SpaceIng[ ]:::spacer
-        
         subgraph Queues["Throttling & Queues"]
             direction TB
-            SpaceQ[ ]:::spacer
             IG_Q[IG Queue]:::ingestion
             YT_Q[YT Queue]:::ingestion
             TT_Q[TT Queue]:::ingestion
             X_Q[X Queue]:::ingestion
             
-            RL["Token Bucket Redis<br/>(Per-Platform / Proxy)<br/>(Rotating Pools)"]:::ingestion
+            RL["Token Bucket Redis<br/>(Per-Platform / Proxy)"]:::ingestion
             Penalty[Penalty Box / Cool Down]:::ingestion
-            
-            SpaceQ ~~~ IG_Q
         end
         
         Scrapers[Scrapers / API Clients]:::ingestion
         DLQ[Dead Letter Queue]:::ingestion
-        
-        SpaceIng ~~~ Queues
     end
 
     subgraph Processing["Data Processing (Kinesis/Lambda/Spark)"]
         direction TB
-        SpaceProc[ ]:::spacer
         RawStream[Raw Data Stream]:::processing
         Enrich[Enrichment & Normalization]:::processing
         Identity[Identity Resolution]:::processing
         Embed["Embedding Generation<br/>(Batch/Async)"]:::processing
-        
-        SpaceProc ~~~ RawStream
     end
 
     subgraph Storage["Storage Layer"]
         direction TB
-        SpaceStor[ ]:::spacer
-        S3_Raw["S3 Raw Storage<br/>(KMS Encrypted)"]:::storage
-        Mongo[("MongoDB Atlas<br/>(KMS Encrypted)")]:::storage
-        Pinecone[("Pinecone Vector DB<br/>(KMS Encrypted)")]:::storage
+        S3_Raw[S3 Raw Storage]:::storage
+        Mongo[(MongoDB Atlas)]:::storage
+        Pinecone[(Pinecone Vector DB)]:::storage
         Cache["Cache<br/>L1: In-Process<br/>L2: Redis"]:::storage
         
         %% Legend / Note
-        StorageInfo["ℹ️ Pinecone: Vectors + Small Meta<br/>Mongo: Canonical Profiles + Graph<br/>S3: Raw Payloads / Archive"]:::storage
-        
-        SpaceStor ~~~ S3_Raw
+        StorageInfo["ℹ️ Pinecone: Vectors + Meta<br/>Mongo: Full Profiles"]:::storage
     end
 
     subgraph Serving["Serving Layer (API Gateway / ECS)"]
         direction TB
-        SpaceServ[ ]:::spacer
-        API["Discovery API<br/>(p95: 200-500ms)"]:::serving
-        Search["Search Service<br/>(Retrieval + Filtering)<br/>(Vector p95: <50ms)"]:::serving
-        Rank["Reranking Service<br/>(LLM Gated: Top-50)<br/>(Batch / Cost Cap)"]:::serving
-        
-        SpaceServ ~~~ API
+        API[Discovery API]:::serving
+        Search["Search Service<br/>(Retrieval + Filtering)"]:::serving
+        Rank["Reranking Service<br/>(LLM / Top-N Gating: 50)"]:::serving
     end
     
     subgraph Ops["Ops & Monitoring"]
         direction TB
-        SpaceOps[ ]:::spacer
-        Prometheus["Prometheus Metrics<br/>(Ingestion Success > 99%)"]:::ops
-        Airflow["Airflow Orchestration<br/>(Backfill Jobs)"]:::ops
+        Prometheus[Prometheus Metrics]:::ops
+        Airflow[Airflow Orchestration]:::ops
         Secrets[Secrets Manager / KMS]:::ops
-        PagerDuty["PagerDuty<br/>(Alerts: DLQ > X)"]:::ops
-        
-        SpaceOps ~~~ Prometheus
     end
 
     %% Subgraph Styles - Darker backgrounds for contrast
@@ -127,15 +98,13 @@ graph LR
     Scrapers -- Rate Limit (429) --> RL
     Scrapers -- Error (5xx) --> DLQ
     DLQ -. Backoff Retry .-> RL
-    DLQ -. "Alerts > X" .-> PagerDuty
 
     %% Processing Pipeline (Raw -> Enriched -> Index)
     RawStream -- JSON --> S3_Raw
     RawStream -- Stream --> Enrich
-    S3_Raw -. "Replay/Backfill" .-> Airflow
-    Airflow --> Enrich
+    S3_Raw -. Replay/Backfill .-> Enrich
     Enrich -- Normalized --> Identity
-    Identity -- "identity_edges<br/>(provenance + confidence)" --> Mongo
+    Identity -- identity_edges --> Mongo
     Identity -- Profile Text --> Embed
     Embed -- Vectors + Meta --> Pinecone
 
@@ -144,20 +113,17 @@ graph LR
     API --> Search
     Search --> Cache
     Cache -. Miss .-> Pinecone
-    Pinecone -- "Top-K IDs" --> Search
-    Search -- "Bulk Fetch Profiles" --> Mongo
-    Mongo -- "Full Docs" --> Search
+    Pinecone -- Top-K IDs --> Search
+    Search -- Bulk Fetch Profiles --> Mongo
+    Mongo -- Full Docs --> Search
     Search -- Candidates --> Rank
     Rank --> API
-    
-    %% Failure Modes
-    Rank -. "Error/Fallback" .-> Cache
 
     %% Ops Flow
     Airflow --> Scrapers
+    Airflow --> Enrich
     Prometheus -. Metrics .-> API
     Prometheus -. Metrics .-> Scrapers
     Secrets -. Keys .-> Scrapers
     Secrets -. Keys .-> Embed
     Secrets -. Keys .-> API
-    Secrets -. Keys .-> Pinecone
