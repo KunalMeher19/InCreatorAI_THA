@@ -9,14 +9,11 @@ InCreator_Assignment/
 ├── DESIGN.md               # Comprehensive Architecture & Design Document
 ├── architecture.mermaid    # Visual Architecture Diagram
 └── artifacts/
-    ├── mongo_schema.py             # MongoDB Schema Definitions & Validation
-    ├── pinecone_client.py          # Pinecone Vector DB Client Wrapper
-    ├── api_spec.yaml               # OpenAPI 3.0 Specification
-    ├── embedding_worker.py         # Mock Embedding Generation Worker
-    ├── ranking_prototype.py        # Prototype: Vector Search + LLM Rerank
-    ├── identity_resolution_test.py # Identity Resolution Logic Tests
-    ├── schema_validation_mongo.py  # Automated MongoDB Schema Validator
-    └── smoke_test.py               # End-to-End Smoke Test Script
+    ├── schemas.sql         # PostgreSQL Schemas (Partitioned)
+    ├── api_spec.yaml       # OpenAPI 3.0 Specification
+    ├── ranking_prototype.py# Python Prototype (Vector Search + LLM Rerank)
+    ├── schema_validation.py# Automated Schema Validator
+    └── smoke_test.py       # End-to-End Smoke Test Script
 ```
 
 ## 🚀 How to Run Verification
@@ -38,19 +35,19 @@ The scripts support two modes:
 ```bash
 cd artifacts
 
-# 1. Validate MongoDB Schema & Indexes
+# 1. Validate MongoDB Schema
 python schema_validation_mongo.py
 
-# 2. Run Smoke Test (Simulated API Flow)
+# 2. Run Smoke Test (Simulated API)
 python smoke_test.py
 
 # 3. Run Embedding Worker (Mock Pipeline)
 python embedding_worker.py
 
-# 4. Run Ranking Prototype (Vector Search + Rerank)
+# 4. Run Ranking Prototype
 python ranking_prototype.py
 
-# 5. Run Identity Resolution Tests (Graph Logic)
+# 5. Run Identity Resolution Tests
 python identity_resolution_test.py
 ```
 
