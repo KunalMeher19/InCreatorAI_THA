@@ -8,15 +8,18 @@ This repository contains the architectural design and technical artifacts for a 
 InCreator_Assignment/
 ├── DESIGN.md               # Comprehensive Architecture & Design Document
 ├── architecture.mermaid    # Visual Architecture Diagram
+├── package.json            # Node.js Project Configuration
+├── tsconfig.json           # TypeScript Configuration
+├── src/
+│   ├── mongoSchema.ts      # MongoDB Schema Definitions & Validation
+│   ├── pineconeClient.ts   # Pinecone Vector DB Client Wrapper
+│   ├── rankingPrototype.ts # Prototype (Vector Search + LLM Rerank)
+│   ├── schemaValidationMongo.test.ts # Automated MongoDB Schema Validator
+│   ├── smokeTest.ts        # End-to-End Smoke Test Script
+│   ├── embeddingWorker.ts  # Mock Embedding Generation Worker
+│   └── identityResolution.test.ts # Identity Graph Resolution Tests
 └── artifacts/
-    ├── mongo_schema.py     # MongoDB Schema Definitions & Validation
-    ├── pinecone_client.py  # Pinecone Vector DB Client Wrapper
     ├── api_spec.yaml       # OpenAPI 3.0 Specification
-    ├── ranking_prototype.py# Python Prototype (Vector Search + LLM Rerank)
-    ├── schema_validation_mongo.py # Automated MongoDB Schema Validator
-    ├── smoke_test.py       # End-to-End Smoke Test Script
-    ├── embedding_worker.py # Mock Embedding Generation Worker
-    ├── identity_resolution_test.py # Identity Graph Resolution Tests
     └── identity_graph_example.json # Sample Identity Graph Data
 ```
 
@@ -25,10 +28,8 @@ InCreator_Assignment/
 We have included automated scripts to validate the design artifacts.
 
 ### Prerequisites
-- Python 3.8+
-- `numpy`
-- `pinecone>=3.0.0` (Tested with v3.1.0)
-- `pymongo`
+- Node.js (LTS) v18+
+- `npm`
 
 ### Run Modes
 The scripts support two modes:
@@ -36,24 +37,32 @@ The scripts support two modes:
 2.  **Live Mode**: Connects to real infrastructure. Requires environment variables.
 
 ### Running Locally (Mock Mode)
-```bash
-cd artifacts
 
-# 1. Validate MongoDB Schema
-python schema_validation_mongo.py
+1.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
 
-# 2. Run Smoke Test (Simulated API)
-python smoke_test.py
+2.  **Run Automated Tests**
+    Runs identity resolution unit tests and schema validation (mock).
+    ```bash
+    npm test
+    ```
 
-# 3. Run Embedding Worker (Mock Pipeline)
-python embedding_worker.py
+3.  **Run Smoke Test (Simulated API)**
+    ```bash
+    npx ts-node src/smokeTest.ts
+    ```
 
-# 4. Run Ranking Prototype
-python ranking_prototype.py
+4.  **Run Embedding Worker (Mock Pipeline)**
+    ```bash
+    npx ts-node src/embeddingWorker.ts
+    ```
 
-# 5. Run Identity Resolution Tests
-python identity_resolution_test.py
-```
+5.  **Run Ranking Prototype**
+    ```bash
+    npx ts-node src/rankingPrototype.ts
+    ```
 
 ## 🌍 Environment Variables (Optional for Live Mode)
 To run against real infrastructure, set these variables:
@@ -61,17 +70,20 @@ To run against real infrastructure, set these variables:
 export MONGO_URI="mongodb+srv://..."
 export PINECONE_API_KEY="pc_..."
 export PINECONE_ENV="us-east-1"
-export OPENAI_API_KEY="sk-..." # Optional, for real embeddings
+# export OPENAI_API_KEY="sk-..." # Optional, for real embeddings
 ```
 
 ### Running Integration Tests (Live)
 To run the schema validation and smoke tests against real endpoints:
+
 ```bash
 # Validate Real Mongo Indexes
-python schema_validation_mongo.py --live
+TEST_LIVE=true npm test src/__test__/schemaValidationMongo.test.ts
 
 # Run Smoke Test against Live API (requires API_URL env var if not mocking)
-python smoke_test.py --live
+# Note: The current smoke test script mocks the client internally. 
+# To test live, you would need to modify src/smokeTest.ts to use a real HTTP client.
+npx ts-node src/smokeTest.ts
 ```
 
 ## ⚙️ CI/CD Integration
@@ -90,23 +102,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.9'
+          node-version: '18'
+          cache: 'npm'
           
       - name: Install Dependencies
-        run: pip install numpy pinecone pymongo
+        run: npm ci
 
-      - name: Validate Schemas (Mock)
-        run: python artifacts/schema_validation_mongo.py
+      - name: Run Unit Tests (Identity & Schema)
+        run: npm test
         
       - name: Run Smoke Test
-        run: python artifacts/smoke_test.py
+        run: npx ts-node src/smokeTest.ts
         
       - name: Verify Embedding Pipeline
-        run: python artifacts/embedding_worker.py
+        run: npx ts-node src/embeddingWorker.ts
         
       - name: Verify Prototype Logic
-        run: python artifacts/ranking_prototype.py
+        run: npx ts-node src/rankingPrototype.ts
 ```

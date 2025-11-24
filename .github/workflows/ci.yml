@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: Design Verification CI
 
 on: [push, pull_request]
@@ -9,25 +8,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          python-version: '3.9'
+          node-version: '18'
+          cache: 'npm'
           
       - name: Install Dependencies
-        run: pip install numpy pinecone pymongo
+        run: npm ci
 
-      - name: Validate Schemas (Mock)
-        run: python artifacts/schema_validation_mongo.py
+      - name: Run Unit Tests (Identity & Schema)
+        run: npm test
         
       - name: Run Smoke Test
-        run: python artifacts/smoke_test.py
+        run: npx ts-node src/smokeTest.ts
         
       - name: Verify Embedding Pipeline
-        run: python artifacts/embedding_worker.py
+        run: npx ts-node src/embeddingWorker.ts
         
       - name: Verify Prototype Logic
-        run: python artifacts/ranking_prototype.py
-        
-      - name: Verify Identity Resolution
-        run: python artifacts/identity_resolution_test.py
+        run: npx ts-node src/rankingPrototype.ts
