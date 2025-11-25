@@ -20,7 +20,8 @@ InCreator_Assignment/
 │   └── identityResolution.test.ts # Identity Graph Resolution Tests
 └── artifacts/
     ├── api_spec.yaml       # OpenAPI 3.0 Specification
-    └── identity_graph_example.json # Sample Identity Graph Data
+    ├── identity_graph_example.json # Sample Identity Graph Data
+    └── ranking_prototype.ipynb # Jupyter Notebook for Ranking Logic Prototype
 ```
 
 ## 🚀 How to Run Verification

@@ -188,3 +188,4 @@ This repository contains the following implemented artifacts:
 4.  **Smoke Test**: `src/smokeTest.ts` (System verification).
 5.  **Embedding Worker**: `src/embeddingWorker.ts` (Batch processing).
 6.  **Identity Resolution**: `src/__test__/identityResolution.test.ts` (Logic verification).
+7.  **Ranking Notebook**: `artifacts/ranking_prototype.ipynb` (Python prototype for embedding search).
