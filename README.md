@@ -7,7 +7,7 @@ This repository contains the architectural design and technical artifacts for a 
 ```
 InCreator_Assignment/
 ├── DESIGN.md               # Comprehensive Architecture & Design Document
-├── architecture.mermaid    # Visual Architecture Diagram
+├── architecture.mermaid    # Visual Architecture Diagram ([View Online](https://www.mermaidchart.com/d/cddfbab3-d920-4986-9226-1d6036245ebd))
 ├── package.json            # Node.js Project Configuration
 ├── tsconfig.json           # TypeScript Configuration
 ├── src/

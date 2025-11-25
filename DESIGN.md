@@ -8,7 +8,7 @@ This document outlines the architectural design for a scalable influencer discov
 
 ## 2. Architecture Diagram
 
-The high-level architecture is visualized in `architecture.mermaid`. It consists of the following core components:
+The high-level architecture is visualized in `architecture.mermaid` (View interactive version [here](https://www.mermaidchart.com/d/cddfbab3-d920-4986-9226-1d6036245ebd)). It consists of the following core components:
 
 1.  **Ingestion Layer**: Multi-platform scrapers/API clients pushing data to a message queue (BullMQ/Redis).
 2.  **Processing Layer**: Workers for embedding generation (OpenAI), identity resolution, and data enrichment.
